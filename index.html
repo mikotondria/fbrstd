@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Random Deep Color Grid</title>
+  <title>Random Fall Red Grid</title>
   <style>
     html, body {
       height: 100%;
@@ -14,7 +14,7 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background: #212024;
+      background: #211819;
     }
     #grid {
       display: grid;
@@ -43,21 +43,20 @@
 <body>
   <div id="grid"></div>
   <script>
-    // 10 deep, rich but slightly desaturated colors
+    // Deep, rich reds and fall colors
     const C = [
-      "#39505A", // Deep blue-green
-      "#5A3D4C", // Muted burgundy
-      "#4F5C30", // Deep olive
-      "#3E3B48", // Desaturated purple
-      "#2B3D42", // Deep slate blue
-      "#5B3A29", // Earthy brown
-      "#334D36", // Dark forest green
-      "#4C4743", // Muted charcoal
-      "#49405A", // Deep indigo
-      "#4A5447"  // Desaturated moss
+      "#8B1C1C", // deep red (garnet)
+      "#A93226", // rich crimson
+      "#7B241C", // dark maroon
+      "#922B21", // wine
+      "#C0392B", // vibrant red
+      "#764248", // muted plum
+      "#B04A3F", // russet
+      "#803015", // burnt sienna
+      "#A04000", // fall pumpkin
+      "#AA4F2B"  // rusty orange
     ];
 
-    // Find grid size: try to get squares, integer number across and down
     const w = window.innerWidth, h = window.innerHeight;
     let nCols = Math.round(Math.sqrt(w / h) * Math.sqrt(25));
     nCols = Math.max(2, nCols);
