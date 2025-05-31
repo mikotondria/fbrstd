@@ -29,10 +29,8 @@
       border-width: 16px;
       border-style: solid;
       transition: border-color 0.3s;
-      /* box-shadow and transform added inline */
       background-blend-mode: multiply;
       background-size: 220% 220%;
-      /* background, background-position set inline */
     }
     .quad {
       position: absolute;
@@ -41,7 +39,6 @@
       top: -4%;
       height: 104%;
       pointer-events: none;
-      /* filter added inline style */
     }
   </style>
 </head>
@@ -88,6 +85,7 @@
       const bg = C[Math.floor(Math.random() * C.length)];
       const border = pickDifferentColor([bg]);
       const quadFill = pickDifferentColor([bg, border]);
+      const innerFill = pickDifferentColor([bg, border, quadFill]);
 
       // Randomize background position for the paper texture
       const posX = Math.floor(Math.random() * 100);
@@ -95,14 +93,12 @@
 
       cell.style.background = `${bg} url('pper.jpg')`;
       cell.style.backgroundPosition = `${posX}% ${posY}%`;
-
       cell.style.backgroundBlendMode = "multiply";
       cell.style.backgroundSize = "220% 220%";
       cell.style.backgroundRepeat = "no-repeat";
-
       cell.style.borderColor = border;
 
-      // --- Random drop shadow for the cell ---
+      // --- Random drop shadow for the cell (unchanged) ---
       const xCell = (Math.random() - 0.5) * 8; // -4 to 4 px
       const yCell = (Math.random() - 0.5) * 8; // -4 to 4 px
       const blurCell = 4 + Math.random() * 6;   // 4-10 px
@@ -120,19 +116,33 @@
       svg.setAttribute('height', '100%');
       svg.setAttribute('viewBox', '0 0 100 100');
 
-      // --- Tighter drop shadow for the quad (SVG filter, max 5px) ---
-      const xQuad = (Math.random() - 0.5) * 5; // -2.5 to 2.5 px
-      const yQuad = (Math.random() - 0.5) * 5; // -2.5 to 2.5 px
-      const blurQuad = 1 + Math.random() * 4; // 1-5 px
-      const filterId = `fshadow${i}`;
-      const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-      filter.setAttribute("id", filterId);
-      filter.innerHTML = `
-        <feDropShadow dx="${xQuad.toFixed(1)}" dy="${yQuad.toFixed(1)}" stdDeviation="${blurQuad.toFixed(1)}" flood-color="#000" flood-opacity="0.18"/>
-      `;
-      svg.appendChild(filter);
+      // Define random pattern offset for paper texture in quad
+      const patternId = `paperPattern${i}`;
+      const patternOffsetX = Math.random();
+      const patternOffsetY = Math.random();
 
-      // Larger, rounder quad
+      // SVG <defs> for pattern
+      const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+      const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+      pattern.setAttribute("id", patternId);
+      pattern.setAttribute("patternUnits", "objectBoundingBox");
+      pattern.setAttribute("width", "1");
+      pattern.setAttribute("height", "1");
+      pattern.setAttribute("x", patternOffsetX);
+      pattern.setAttribute("y", patternOffsetY);
+
+      const image = document.createElementNS("http://www.w3.org/2000/svg", "image");
+      image.setAttribute("href", "pper.jpg");
+      image.setAttribute("x", 0);
+      image.setAttribute("y", 0);
+      image.setAttribute("width", 100);
+      image.setAttribute("height", 100);
+      image.setAttribute("preserveAspectRatio", "xMidYMid slice");
+      pattern.appendChild(image);
+      defs.appendChild(pattern);
+      svg.appendChild(defs);
+
+      // Outer blob (quad with pattern fill + color blend using <g> with opacity)
       const padX = 8, padY = 4, r = 12;
       const pts = [
         {x: padX+Math.random()*6, y: padY+32+Math.random()*3},
@@ -153,12 +163,43 @@
           Z
         `;
       }
-      const path = document.createElementNS("http://www.w3.org/2000/svg","path");
-      path.setAttribute('d', roundedPath(pts, r));
-      path.setAttribute('fill', quadFill);
-      path.setAttribute('stroke', "none");
-      path.setAttribute('filter', `url(#${filterId})`);
-      svg.appendChild(path);
+
+      // Outer quad filled with blended color and paper texture
+      const outerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+      // Paper texture path
+      const outerPathPattern = document.createElementNS("http://www.w3.org/2000/svg","path");
+      outerPathPattern.setAttribute('d', roundedPath(pts, r));
+      outerPathPattern.setAttribute('fill', `url(#${patternId})`);
+      outerGroup.appendChild(outerPathPattern);
+
+      // Color overlay with multiply blend
+      const outerPathColor = document.createElementNS("http://www.w3.org/2000/svg","path");
+      outerPathColor.setAttribute('d', roundedPath(pts, r));
+      outerPathColor.setAttribute('fill', quadFill);
+      outerPathColor.setAttribute('style', 'mix-blend-mode:multiply; opacity:0.85;');
+      outerGroup.appendChild(outerPathColor);
+
+      svg.appendChild(outerGroup);
+
+      // --- Inner blob, 4/5 area, randomized corners ---
+      // We'll scale the outer quad coordinates towards the center and randomize again
+      function shrinkPoint(pt, factor, cx, cy) {
+        // Move pt towards center (cx, cy) by factor
+        return {
+          x: cx + (pt.x - cx) * factor + (Math.random()-0.5)*2, // Additional tiny jitter
+          y: cy + (pt.y - cy) * factor + (Math.random()-0.5)*2
+        };
+      }
+      // Center of outer quad
+      const cx = (pts[0].x + pts[1].x + pts[2].x + pts[3].x)/4;
+      const cy = (pts[0].y + pts[1].y + pts[2].y + pts[3].y)/4;
+      const innerPts = pts.map(pt => shrinkPoint(pt, 0.8, cx, cy));
+      const innerPath = document.createElementNS("http://www.w3.org/2000/svg","path");
+      innerPath.setAttribute('d', roundedPath(innerPts, r*0.8));
+      innerPath.setAttribute('fill', innerFill);
+      innerPath.setAttribute('style', 'opacity:0.92; mix-blend-mode:screen;');
+      svg.appendChild(innerPath);
 
       cell.appendChild(svg);
       grid.appendChild(cell);
