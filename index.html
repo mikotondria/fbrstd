@@ -28,6 +28,7 @@
       box-sizing: border-box;
       border-width: 16px;
       border-style: solid;
+      border-radius: 3px;        /* <--- Added roundness */
       transition: border-color 0.3s;
       background-blend-mode: multiply;
       background-size: 220% 220%;
@@ -59,6 +60,9 @@
       "#AA4F2B"  // rusty orange
     ];
 
+    // Possible sub-quad grays
+    const GRAYS = ["#f0f0f0", "#232323"];
+
     const w = window.innerWidth, h = window.innerHeight;
     let nCols = Math.round(Math.sqrt(w / h) * Math.sqrt(25));
     nCols = Math.max(2, nCols);
@@ -77,6 +81,10 @@
       return c;
     }
 
+    function pickGray() {
+      return GRAYS[Math.floor(Math.random() * GRAYS.length)];
+    }
+
     for (let i = 0; i < nCols * nRows; ++i) {
       const cell = document.createElement('div');
       cell.className = 'cell';
@@ -85,7 +93,7 @@
       const bg = C[Math.floor(Math.random() * C.length)];
       const border = pickDifferentColor([bg]);
       const quadFill = pickDifferentColor([bg, border]);
-      const innerFill = pickDifferentColor([bg, border, quadFill]);
+      const innerGray = pickGray();
 
       // Randomize background position for the paper texture
       const posX = Math.floor(Math.random() * 100);
@@ -183,7 +191,6 @@
       svg.appendChild(outerGroup);
 
       // --- Inner blob, 4/5 area, randomized corners ---
-      // We'll scale the outer quad coordinates towards the center and randomize again
       function shrinkPoint(pt, factor, cx, cy) {
         // Move pt towards center (cx, cy) by factor
         return {
@@ -197,8 +204,8 @@
       const innerPts = pts.map(pt => shrinkPoint(pt, 0.8, cx, cy));
       const innerPath = document.createElementNS("http://www.w3.org/2000/svg","path");
       innerPath.setAttribute('d', roundedPath(innerPts, r*0.8));
-      innerPath.setAttribute('fill', innerFill);
-      innerPath.setAttribute('style', 'opacity:0.92; mix-blend-mode:screen;');
+      innerPath.setAttribute('fill', innerGray);
+      innerPath.setAttribute('style', 'opacity:0.92; mix-blend-mode:overlay;');
       svg.appendChild(innerPath);
 
       cell.appendChild(svg);
