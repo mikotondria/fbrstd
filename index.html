@@ -30,6 +30,9 @@
       border-style: solid;
       transition: border-color 0.3s;
       /* box-shadow and transform added inline */
+      background-blend-mode: multiply;
+      background-size: 220% 220%;
+      /* background, background-position set inline */
     }
     .quad {
       position: absolute;
@@ -86,11 +89,20 @@
       const border = pickDifferentColor([bg]);
       const quadFill = pickDifferentColor([bg, border]);
 
-      cell.style.background = bg;
+      // Randomize background position for the paper texture
+      const posX = Math.floor(Math.random() * 100);
+      const posY = Math.floor(Math.random() * 100);
+
+      cell.style.background = `${bg} url('pper.jpg')`;
+      cell.style.backgroundPosition = `${posX}% ${posY}%`;
+
+      cell.style.backgroundBlendMode = "multiply";
+      cell.style.backgroundSize = "220% 220%";
+      cell.style.backgroundRepeat = "no-repeat";
+
       cell.style.borderColor = border;
 
       // --- Random drop shadow for the cell ---
-      // Offset and blur no more than 10px, semi-transparent black
       const xCell = (Math.random() - 0.5) * 8; // -4 to 4 px
       const yCell = (Math.random() - 0.5) * 8; // -4 to 4 px
       const blurCell = 4 + Math.random() * 6;   // 4-10 px
