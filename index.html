@@ -237,14 +237,14 @@
     // Sequentially refresh each cell, 1 second apart, left-to-right, top-to-bottom
     function refreshCellsSequentially() {
       for (let i = 0; i < cells.length; ++i) {
-        setTimeout(() => refreshCell(cells[i], i), 1000 * i);
+        setTimeout(() => refreshCell(cells[i], i), 100 * i);
       }
     }
 
     // Start the sequential refresh
-    refreshCellsSequentially();
+    //refreshCellsSequentially();
     // Optionally, repeat after all have refreshed:
-    // setInterval(refreshCellsSequentially, 1000 * cells.length);
+    setInterval(refreshCellsSequentially, 100 * cells.length);
 
   </script>
 </body>
