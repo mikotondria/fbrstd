@@ -154,7 +154,7 @@
       const outerPathColor = document.createElementNS(svgNS,"path");
       outerPathColor.setAttribute('d', roundedPath(pts, r));
       outerPathColor.setAttribute('fill', quadFill);
-      outerPathColor.setAttribute('style', 'mix-blend-mode:multiply; opacity:0.85;');
+      outerPathColor.setAttribute('style', 'mix-blend-mode:overlay; opacity:0.85;');
       outerGroup.appendChild(outerPathColor);
       svg.appendChild(outerGroup);
 
