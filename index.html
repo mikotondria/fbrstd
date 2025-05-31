@@ -38,4 +38,114 @@
       top: -4%;
       height: 104%;
       pointer-events: none;
-      /* filter added inline style
+      /* filter added inline style */
+    }
+  </style>
+</head>
+<body>
+  <div id="grid"></div>
+  <script>
+    // Deep, rich reds and fall colors
+    const C = [
+      "#8B1C1C", // deep red (garnet)
+      "#A93226", // rich crimson
+      "#7B241C", // dark maroon
+      "#922B21", // wine
+      "#C0392B", // vibrant red
+      "#764248", // muted plum
+      "#B04A3F", // russet
+      "#803015", // burnt sienna
+      "#A04000", // fall pumpkin
+      "#AA4F2B"  // rusty orange
+    ];
+
+    const w = window.innerWidth, h = window.innerHeight;
+    let nCols = Math.round(Math.sqrt(w / h) * Math.sqrt(25));
+    nCols = Math.max(2, nCols);
+    let nRows = Math.round(h / (w / nCols));
+    nRows = Math.max(2, nRows);
+
+    const grid = document.getElementById('grid');
+    grid.style.gridTemplateColumns = `repeat(${nCols}, 1fr)`;
+    grid.style.gridTemplateRows = `repeat(${nRows}, 1fr)`;
+
+    function pickDifferentColor(exclude) {
+      let c;
+      do {
+        c = C[Math.floor(Math.random() * C.length)];
+      } while (exclude.includes(c));
+      return c;
+    }
+
+    for (let i = 0; i < nCols * nRows; ++i) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+
+      // Pick colors
+      const bg = C[Math.floor(Math.random() * C.length)];
+      const border = pickDifferentColor([bg]);
+      const quadFill = pickDifferentColor([bg, border]);
+
+      cell.style.background = bg;
+      cell.style.borderColor = border;
+
+      // --- Random drop shadow for the cell ---
+      // Slightly offset, small blur, semi-transparent black
+      const xCell = (Math.random() - 0.5) * 12; // -6 to 6 px
+      const yCell = (Math.random() - 0.5) * 12; // -6 to 6 px
+      const blurCell = 6 + Math.random() * 6;   // 6-12 px
+      cell.style.boxShadow = `${xCell.toFixed(1)}px ${yCell.toFixed(1)}px ${blurCell.toFixed(1)}px rgba(0,0,0,0.18)`;
+
+      // SVG for the rounded quadrilateral
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute('class', 'quad');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+      svg.setAttribute('viewBox', '0 0 100 100');
+
+      // --- Random drop shadow for the quad (SVG filter) ---
+      const xQuad = (Math.random() - 0.5) * 8; // -4 to 4 px
+      const yQuad = (Math.random() - 0.5) * 8;
+      const blurQuad = 4 + Math.random() * 4;
+      const filterId = `fshadow${i}`;
+      const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
+      filter.setAttribute("id", filterId);
+      filter.innerHTML = `
+        <feDropShadow dx="${xQuad.toFixed(1)}" dy="${yQuad.toFixed(1)}" stdDeviation="${blurQuad.toFixed(1)}" flood-color="#000" flood-opacity="0.20"/>
+      `;
+      svg.appendChild(filter);
+
+      // Larger, rounder quad
+      const padX = 8, padY = 4, r = 12;
+      const pts = [
+        {x: padX+Math.random()*6, y: padY+32+Math.random()*3},
+        {x: 100-padX-Math.random()*6, y: padY+28+Math.random()*3},
+        {x: 100-padX-Math.random()*6, y: 100-padY-Math.random()*4},
+        {x: padX+Math.random()*6, y: 100-padY-Math.random()*4}
+      ];
+      function roundedPath(pts, r) {
+        return `
+          M${pts[0].x},${pts[0].y+r}
+          Q${pts[0].x},${pts[0].y} ${pts[0].x+r},${pts[0].y}
+          L${pts[1].x-r},${pts[1].y}
+          Q${pts[1].x},${pts[1].y} ${pts[1].x},${pts[1].y+r}
+          L${pts[2].x},${pts[2].y-r}
+          Q${pts[2].x},${pts[2].y} ${pts[2].x-r},${pts[2].y}
+          L${pts[3].x+r},${pts[3].y}
+          Q${pts[3].x},${pts[3].y} ${pts[3].x},${pts[3].y-r}
+          Z
+        `;
+      }
+      const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+      path.setAttribute('d', roundedPath(pts, r));
+      path.setAttribute('fill', quadFill);
+      path.setAttribute('stroke', "none");
+      path.setAttribute('filter', `url(#${filterId})`);
+      svg.appendChild(path);
+
+      cell.appendChild(svg);
+      grid.appendChild(cell);
+    }
+  </script>
+</body>
+</html>
