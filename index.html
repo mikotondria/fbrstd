@@ -28,7 +28,7 @@
       box-sizing: border-box;
       border-width: 16px;
       border-style: solid;
-      border-radius: 3px;        /* <--- Added roundness */
+      border-radius: 3px;
       transition: border-color 0.3s;
       background-blend-mode: multiply;
       background-size: 220% 220%;
@@ -48,19 +48,9 @@
   <script>
     // Deep, rich reds and fall colors
     const C = [
-      "#8B1C1C", // deep red (garnet)
-      "#A93226", // rich crimson
-      "#7B241C", // dark maroon
-      "#922B21", // wine
-      "#C0392B", // vibrant red
-      "#764248", // muted plum
-      "#B04A3F", // russet
-      "#803015", // burnt sienna
-      "#A04000", // fall pumpkin
-      "#AA4F2B"  // rusty orange
+      "#8B1C1C", "#A93226", "#7B241C", "#922B21", "#C0392B",
+      "#764248", "#B04A3F", "#803015", "#A04000", "#AA4F2B"
     ];
-
-    // Possible sub-quad grays
     const GRAYS = ["#f0f0f0", "#232323"];
 
     const w = window.innerWidth, h = window.innerHeight;
@@ -75,82 +65,26 @@
 
     function pickDifferentColor(exclude) {
       let c;
-      do {
-        c = C[Math.floor(Math.random() * C.length)];
-      } while (exclude.includes(c));
+      do { c = C[Math.floor(Math.random() * C.length)]; }
+      while (exclude.includes(c));
       return c;
     }
-
     function pickGray() {
       return GRAYS[Math.floor(Math.random() * GRAYS.length)];
     }
 
-    for (let i = 0; i < nCols * nRows; ++i) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-
+    // Helper to generate blob SVG, reused for refresh
+    function makeBlobSVG(i) {
       // Pick colors
-      const bg = C[Math.floor(Math.random() * C.length)];
-      const border = pickDifferentColor([bg]);
-      const quadFill = pickDifferentColor([bg, border]);
+      const quadFill = pickDifferentColor([]);
       const innerGray = pickGray();
 
-      // Randomize background position for the paper texture
-      const posX = Math.floor(Math.random() * 100);
-      const posY = Math.floor(Math.random() * 100);
-
-      cell.style.background = `${bg} url('pper.jpg')`;
-      cell.style.backgroundPosition = `${posX}% ${posY}%`;
-      cell.style.backgroundBlendMode = "multiply";
-      cell.style.backgroundSize = "220% 220%";
-      cell.style.backgroundRepeat = "no-repeat";
-      cell.style.borderColor = border;
-
-      // --- Random drop shadow for the cell (unchanged) ---
-      const xCell = (Math.random() - 0.5) * 8; // -4 to 4 px
-      const yCell = (Math.random() - 0.5) * 8; // -4 to 4 px
-      const blurCell = 4 + Math.random() * 6;   // 4-10 px
-      cell.style.boxShadow = `${xCell.toFixed(1)}px ${yCell.toFixed(1)}px ${blurCell.toFixed(1)}px rgba(0,0,0,0.32)`;
-
-      // --- Random scale and rotation for paper pile effect ---
-      const scale = 0.97 + Math.random() * (1.03 - 0.97); // 97% to 103%
-      const rot = (Math.random() - 0.5) * 4; // -2 to +2 deg
-      cell.style.transform = `scale(${scale.toFixed(4)}) rotate(${rot.toFixed(3)}deg)`;
-
-      // SVG for the rounded quadrilateral
-      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute('class', 'quad');
-      svg.setAttribute('width', '100%');
-      svg.setAttribute('height', '100%');
-      svg.setAttribute('viewBox', '0 0 100 100');
-
       // Define random pattern offset for paper texture in quad
-      const patternId = `paperPattern${i}`;
+      const patternId = `paperPattern${i}_${Math.random().toString(36).slice(2,8)}`;
       const patternOffsetX = Math.random();
       const patternOffsetY = Math.random();
 
-      // SVG <defs> for pattern
-      const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-      const pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
-      pattern.setAttribute("id", patternId);
-      pattern.setAttribute("patternUnits", "objectBoundingBox");
-      pattern.setAttribute("width", "1");
-      pattern.setAttribute("height", "1");
-      pattern.setAttribute("x", patternOffsetX);
-      pattern.setAttribute("y", patternOffsetY);
-
-      const image = document.createElementNS("http://www.w3.org/2000/svg", "image");
-      image.setAttribute("href", "pper.jpg");
-      image.setAttribute("x", 0);
-      image.setAttribute("y", 0);
-      image.setAttribute("width", 100);
-      image.setAttribute("height", 100);
-      image.setAttribute("preserveAspectRatio", "xMidYMid slice");
-      pattern.appendChild(image);
-      defs.appendChild(pattern);
-      svg.appendChild(defs);
-
-      // Outer blob (quad with pattern fill + color blend using <g> with opacity)
+      // Outer blob points
       const padX = 8, padY = 4, r = 12;
       const pts = [
         {x: padX+Math.random()*6, y: padY+32+Math.random()*3},
@@ -171,46 +105,147 @@
           Z
         `;
       }
+      // Center and inner quad
+      const cx = (pts[0].x + pts[1].x + pts[2].x + pts[3].x)/4;
+      const cy = (pts[0].y + pts[1].y + pts[2].y + pts[3].y)/4;
+      function shrinkPoint(pt, factor, cx, cy) {
+        return {
+          x: cx + (pt.x - cx) * factor + (Math.random()-0.5)*2,
+          y: cy + (pt.y - cy) * factor + (Math.random()-0.5)*2
+        };
+      }
+      const innerPts = pts.map(pt => shrinkPoint(pt, 0.8, cx, cy));
 
-      // Outer quad filled with blended color and paper texture
-      const outerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      // SVG
+      const svgNS = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.setAttribute('class', 'quad');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+      svg.setAttribute('viewBox', '0 0 100 100');
 
-      // Paper texture path
-      const outerPathPattern = document.createElementNS("http://www.w3.org/2000/svg","path");
+      // Pattern
+      const defs = document.createElementNS(svgNS, "defs");
+      const pattern = document.createElementNS(svgNS, "pattern");
+      pattern.setAttribute("id", patternId);
+      pattern.setAttribute("patternUnits", "objectBoundingBox");
+      pattern.setAttribute("width", "1");
+      pattern.setAttribute("height", "1");
+      pattern.setAttribute("x", patternOffsetX);
+      pattern.setAttribute("y", patternOffsetY);
+      const image = document.createElementNS(svgNS, "image");
+      image.setAttribute("href", "pper.jpg");
+      image.setAttribute("x", 0);
+      image.setAttribute("y", 0);
+      image.setAttribute("width", 100);
+      image.setAttribute("height", 100);
+      image.setAttribute("preserveAspectRatio", "xMidYMid slice");
+      pattern.appendChild(image);
+      defs.appendChild(pattern);
+      svg.appendChild(defs);
+
+      // Outer quad: paper pattern, then color
+      const outerGroup = document.createElementNS(svgNS, "g");
+      const outerPathPattern = document.createElementNS(svgNS,"path");
       outerPathPattern.setAttribute('d', roundedPath(pts, r));
       outerPathPattern.setAttribute('fill', `url(#${patternId})`);
       outerGroup.appendChild(outerPathPattern);
-
-      // Color overlay with multiply blend
-      const outerPathColor = document.createElementNS("http://www.w3.org/2000/svg","path");
+      const outerPathColor = document.createElementNS(svgNS,"path");
       outerPathColor.setAttribute('d', roundedPath(pts, r));
       outerPathColor.setAttribute('fill', quadFill);
       outerPathColor.setAttribute('style', 'mix-blend-mode:multiply; opacity:0.85;');
       outerGroup.appendChild(outerPathColor);
-
       svg.appendChild(outerGroup);
 
-      // --- Inner blob, 4/5 area, randomized corners ---
-      function shrinkPoint(pt, factor, cx, cy) {
-        // Move pt towards center (cx, cy) by factor
-        return {
-          x: cx + (pt.x - cx) * factor + (Math.random()-0.5)*2, // Additional tiny jitter
-          y: cy + (pt.y - cy) * factor + (Math.random()-0.5)*2
-        };
-      }
-      // Center of outer quad
-      const cx = (pts[0].x + pts[1].x + pts[2].x + pts[3].x)/4;
-      const cy = (pts[0].y + pts[1].y + pts[2].y + pts[3].y)/4;
-      const innerPts = pts.map(pt => shrinkPoint(pt, 0.8, cx, cy));
-      const innerPath = document.createElementNS("http://www.w3.org/2000/svg","path");
+      // Inner quad: random gray, overlay
+      const innerPath = document.createElementNS(svgNS,"path");
       innerPath.setAttribute('d', roundedPath(innerPts, r*0.8));
       innerPath.setAttribute('fill', innerGray);
       innerPath.setAttribute('style', 'opacity:0.92; mix-blend-mode:overlay;');
       svg.appendChild(innerPath);
 
-      cell.appendChild(svg);
-      grid.appendChild(cell);
+      return svg;
     }
+
+    // List of cells (in grid order, left-to-right, top-to-bottom)
+    const cells = [];
+    for (let row = 0; row < nRows; ++row) {
+      for (let col = 0; col < nCols; ++col) {
+        const i = row * nCols + col;
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+
+        // Initial random background/color
+        const bg = C[Math.floor(Math.random() * C.length)];
+        const border = pickDifferentColor([bg]);
+        const posX = Math.floor(Math.random() * 100);
+        const posY = Math.floor(Math.random() * 100);
+
+        cell.style.background = `${bg} url('pper.jpg')`;
+        cell.style.backgroundPosition = `${posX}% ${posY}%`;
+        cell.style.backgroundBlendMode = "multiply";
+        cell.style.backgroundSize = "220% 220%";
+        cell.style.backgroundRepeat = "no-repeat";
+        cell.style.borderColor = border;
+
+        const xCell = (Math.random() - 0.5) * 8;
+        const yCell = (Math.random() - 0.5) * 8;
+        const blurCell = 4 + Math.random() * 6;
+        cell.style.boxShadow = `${xCell.toFixed(1)}px ${yCell.toFixed(1)}px ${blurCell.toFixed(1)}px rgba(0,0,0,0.32)`;
+
+        const scale = 0.97 + Math.random() * (1.03 - 0.97);
+        const rot = (Math.random() - 0.5) * 4;
+        cell.style.transform = `scale(${scale.toFixed(4)}) rotate(${rot.toFixed(3)}deg)`;
+
+        // Add initial SVG blob
+        cell.appendChild(makeBlobSVG(i));
+        grid.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+
+    // Cell "refresh" function: rerandomizes background, border, transform, and blob SVG
+    function refreshCell(cell, i) {
+      // Remove old quad svg
+      while (cell.lastChild) cell.removeChild(cell.lastChild);
+
+      // Rerandomize background
+      const bg = C[Math.floor(Math.random() * C.length)];
+      const border = pickDifferentColor([bg]);
+      const posX = Math.floor(Math.random() * 100);
+      const posY = Math.floor(Math.random() * 100);
+      cell.style.background = `${bg} url('pper.jpg')`;
+      cell.style.backgroundPosition = `${posX}% ${posY}%`;
+      cell.style.backgroundBlendMode = "multiply";
+      cell.style.backgroundSize = "220% 220%";
+      cell.style.backgroundRepeat = "no-repeat";
+      cell.style.borderColor = border;
+
+      const xCell = (Math.random() - 0.5) * 8;
+      const yCell = (Math.random() - 0.5) * 8;
+      const blurCell = 4 + Math.random() * 6;
+      cell.style.boxShadow = `${xCell.toFixed(1)}px ${yCell.toFixed(1)}px ${blurCell.toFixed(1)}px rgba(0,0,0,0.32)`;
+
+      const scale = 0.97 + Math.random() * (1.03 - 0.97);
+      const rot = (Math.random() - 0.5) * 4;
+      cell.style.transform = `scale(${scale.toFixed(4)}) rotate(${rot.toFixed(3)}deg)`;
+
+      // Add new blob SVG
+      cell.appendChild(makeBlobSVG(i));
+    }
+
+    // Sequentially refresh each cell, 1 second apart, left-to-right, top-to-bottom
+    function refreshCellsSequentially() {
+      for (let i = 0; i < cells.length; ++i) {
+        setTimeout(() => refreshCell(cells[i], i), 1000 * i);
+      }
+    }
+
+    // Start the sequential refresh
+    refreshCellsSequentially();
+    // Optionally, repeat after all have refreshed:
+    // setInterval(refreshCellsSequentially, 1000 * cells.length);
+
   </script>
 </body>
 </html>
