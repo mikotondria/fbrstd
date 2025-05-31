@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Random Fall Red Grid</title>
   <style>
-    html, body {
+    html, body { 
       height: 100%;
       margin: 0;
       padding: 0;
@@ -14,7 +14,7 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background: #211819;
+      background: #251a18;
     }
     #grid {
       display: grid;
@@ -29,7 +29,7 @@
       border-width: 16px;
       border-style: solid;
       transition: border-color 0.3s;
-      /* box-shadow added inline style */
+      /* box-shadow and transform added inline */
     }
     .quad {
       position: absolute;
@@ -90,11 +90,16 @@
       cell.style.borderColor = border;
 
       // --- Random drop shadow for the cell ---
-      // Slightly offset, small blur, semi-transparent black
-      const xCell = (Math.random() - 0.5) * 12; // -6 to 6 px
-      const yCell = (Math.random() - 0.5) * 12; // -6 to 6 px
-      const blurCell = 6 + Math.random() * 6;   // 6-12 px
-      cell.style.boxShadow = `${xCell.toFixed(1)}px ${yCell.toFixed(1)}px ${blurCell.toFixed(1)}px rgba(0,0,0,0.38)`;
+      // Offset and blur no more than 10px, semi-transparent black
+      const xCell = (Math.random() - 0.5) * 8; // -4 to 4 px
+      const yCell = (Math.random() - 0.5) * 8; // -4 to 4 px
+      const blurCell = 4 + Math.random() * 6;   // 4-10 px
+      cell.style.boxShadow = `${xCell.toFixed(1)}px ${yCell.toFixed(1)}px ${blurCell.toFixed(1)}px rgba(0,0,0,0.32)`;
+
+      // --- Random scale and rotation for paper pile effect ---
+      const scale = 0.985 + Math.random() * (1.015 - 0.985); // 98.5% to 101.5%
+      const rot = (Math.random() - 0.5) * 2; // -1 to +1 deg
+      cell.style.transform = `scale(${scale.toFixed(4)}) rotate(${rot.toFixed(3)}deg)`;
 
       // SVG for the rounded quadrilateral
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -103,15 +108,15 @@
       svg.setAttribute('height', '100%');
       svg.setAttribute('viewBox', '0 0 100 100');
 
-      // --- Random drop shadow for the quad (SVG filter) ---
-      const xQuad = (Math.random() - 0.5) * 8; // -4 to 4 px
-      const yQuad = (Math.random() - 0.5) * 8;
-      const blurQuad = 4 + Math.random() * 4;
+      // --- Random drop shadow for the quad (SVG filter, tighter) ---
+      const xQuad = (Math.random() - 0.5) * 6; // -3 to 3 px
+      const yQuad = (Math.random() - 0.5) * 6;
+      const blurQuad = 2 + Math.random() * 6; // 2-8 px
       const filterId = `fshadow${i}`;
       const filter = document.createElementNS("http://www.w3.org/2000/svg", "filter");
       filter.setAttribute("id", filterId);
       filter.innerHTML = `
-        <feDropShadow dx="${xQuad.toFixed(1)}" dy="${yQuad.toFixed(1)}" stdDeviation="${blurQuad.toFixed(1)}" flood-color="#000" flood-opacity="0.20"/>
+        <feDropShadow dx="${xQuad.toFixed(1)}" dy="${yQuad.toFixed(1)}" stdDeviation="${blurQuad.toFixed(1)}" flood-color="#000" flood-opacity="0.18"/>
       `;
       svg.appendChild(filter);
 
