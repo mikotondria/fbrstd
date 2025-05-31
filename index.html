@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Random Muted Color Grid</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #f8f8f7;
+    }
+    #grid {
+      display: grid;
+      height: 100vh;
+      width: 100vw;
+      /* grid-template-rows and columns set by JS */
+    }
+    .cell {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+    }
+    .quad {
+      position: absolute;
+      left: 12%;
+      width: 76%;
+      top: 36%;
+      height: 62%;
+      /* svg fills parent */
+    }
+  </style>
+</head>
+<body>
+  <div id="grid"></div>
+  <script>
+    // 10 muted pastel colors
+    const C = [
+      "#B0C4B1", "#A4B3B6", "#B8B5C8", "#CDB4DB", "#A3C9A8",
+      "#BFD8B8", "#C9CBA3", "#D0C4DF", "#C7D3DD", "#B5C9C3"
+    ];
+
+    // Find grid size: try to get squares, integer number across and down
+    const w = window.innerWidth, h = window.innerHeight;
+    let nCols = Math.round(Math.sqrt(w / h) * Math.sqrt(25)); // guess 25 cells total
+    nCols = Math.max(2, nCols);
+    let nRows = Math.round(h / (w / nCols));
+    nRows = Math.max(2, nRows);
+
+    // Adjust so both are integers and grid fills screen
+    const cellW = Math.floor(w / nCols);
+    const cellH = Math.floor(h / nRows);
+
+    const grid = document.getElementById('grid');
+    grid.style.gridTemplateColumns = `repeat(${nCols}, 1fr)`;
+    grid.style.gridTemplateRows = `repeat(${nRows}, 1fr)`;
+
+    function pickDifferentColor(exclude) {
+      let c;
+      do {
+        c = C[Math.floor(Math.random() * C.length)];
+      } while (exclude.includes(c));
+      return c;
+    }
+
+    for (let i = 0; i < nCols * nRows; ++i) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      // Pick colors
+      const bg = C[Math.floor(Math.random() * C.length)];
+      const quadFill = pickDifferentColor([bg]);
+      const quadStroke = pickDifferentColor([bg, quadFill]);
+      cell.style.background = bg;
+
+      // SVG for the rounded quadrilateral, lower 2/3
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute('class', 'quad');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+      svg.setAttribute('viewBox', '0 0 100 100');
+
+      // Quadrilateral points (rounded corners)
+      // We'll make it slightly irregular for visual interest
+      const pad = 12, r = 18;
+      const pts = [
+        {x: pad+Math.random()*6, y: pad+r/2+Math.random()*6},
+        {x: 100-pad-Math.random()*6, y: pad+Math.random()*6},
+        {x: 100-pad-Math.random()*6, y: 100-pad-Math.random()*6},
+        {x: pad+Math.random()*6, y: 100-pad-Math.random()*6}
+      ];
+      // SVG path for rounded quad
+      function roundedPath(pts, r) {
+        return `
+          M${pts[0].x},${pts[0].y+r}
+          Q${pts[0].x},${pts[0].y} ${pts[0].x+r},${pts[0].y}
+          L${pts[1].x-r},${pts[1].y}
+          Q${pts[1].x},${pts[1].y} ${pts[1].x},${pts[1].y+r}
+          L${pts[2].x},${pts[2].y-r}
+          Q${pts[2].x},${pts[2].y} ${pts[2].x-r},${pts[2].y}
+          L${pts[3].x+r},${pts[3].y}
+          Q${pts[3].x},${pts[3].y} ${pts[3].x},${pts[3].y-r}
+          Z
+        `;
+      }
+      const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+      path.setAttribute('d', roundedPath(pts, r));
+      path.setAttribute('fill', quadFill);
+      path.setAttribute('stroke', quadStroke);
+      path.setAttribute('stroke-width', 4);
+      svg.appendChild(path);
+
+      cell.appendChild(svg);
+      grid.appendChild(cell);
+    }
+  </script>
+</body>
+</html>
