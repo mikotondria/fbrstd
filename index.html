@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Random Muted Color Grid</title>
+  <title>Random Deep Color Grid</title>
   <style>
     html, body {
       height: 100%;
@@ -14,49 +14,55 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background: #f8f8f7;
+      background: #212024;
     }
     #grid {
       display: grid;
       height: 100vh;
       width: 100vw;
-      /* grid-template-rows and columns set by JS */
     }
     .cell {
       position: relative;
       width: 100%;
       height: 100%;
       box-sizing: border-box;
+      border-width: 5px;
+      border-style: solid;
+      transition: border-color 0.3s;
     }
     .quad {
       position: absolute;
-      left: 12%;
-      width: 76%;
-      top: 36%;
-      height: 62%;
-      /* svg fills parent */
+      left: 8%;
+      width: 84%;
+      top: 34%;
+      height: 64%;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
   <div id="grid"></div>
   <script>
-    // 10 muted pastel colors
+    // 10 deep, rich but slightly desaturated colors
     const C = [
-      "#B0C4B1", "#A4B3B6", "#B8B5C8", "#CDB4DB", "#A3C9A8",
-      "#BFD8B8", "#C9CBA3", "#D0C4DF", "#C7D3DD", "#B5C9C3"
+      "#39505A", // Deep blue-green
+      "#5A3D4C", // Muted burgundy
+      "#4F5C30", // Deep olive
+      "#3E3B48", // Desaturated purple
+      "#2B3D42", // Deep slate blue
+      "#5B3A29", // Earthy brown
+      "#334D36", // Dark forest green
+      "#4C4743", // Muted charcoal
+      "#49405A", // Deep indigo
+      "#4A5447"  // Desaturated moss
     ];
 
     // Find grid size: try to get squares, integer number across and down
     const w = window.innerWidth, h = window.innerHeight;
-    let nCols = Math.round(Math.sqrt(w / h) * Math.sqrt(25)); // guess 25 cells total
+    let nCols = Math.round(Math.sqrt(w / h) * Math.sqrt(25));
     nCols = Math.max(2, nCols);
     let nRows = Math.round(h / (w / nCols));
     nRows = Math.max(2, nRows);
-
-    // Adjust so both are integers and grid fills screen
-    const cellW = Math.floor(w / nCols);
-    const cellH = Math.floor(h / nRows);
 
     const grid = document.getElementById('grid');
     grid.style.gridTemplateColumns = `repeat(${nCols}, 1fr)`;
@@ -73,29 +79,30 @@
     for (let i = 0; i < nCols * nRows; ++i) {
       const cell = document.createElement('div');
       cell.className = 'cell';
+
       // Pick colors
       const bg = C[Math.floor(Math.random() * C.length)];
-      const quadFill = pickDifferentColor([bg]);
-      const quadStroke = pickDifferentColor([bg, quadFill]);
-      cell.style.background = bg;
+      const border = pickDifferentColor([bg]);
+      const quadFill = pickDifferentColor([bg, border]);
 
-      // SVG for the rounded quadrilateral, lower 2/3
+      cell.style.background = bg;
+      cell.style.borderColor = border;
+
+      // SVG for the rounded quadrilateral, lower 2/3, larger and borderless
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.setAttribute('class', 'quad');
       svg.setAttribute('width', '100%');
       svg.setAttribute('height', '100%');
       svg.setAttribute('viewBox', '0 0 100 100');
 
-      // Quadrilateral points (rounded corners)
-      // We'll make it slightly irregular for visual interest
-      const pad = 12, r = 18;
+      // Larger, rounder quad
+      const padX = 8, padY = 4, r = 22;
       const pts = [
-        {x: pad+Math.random()*6, y: pad+r/2+Math.random()*6},
-        {x: 100-pad-Math.random()*6, y: pad+Math.random()*6},
-        {x: 100-pad-Math.random()*6, y: 100-pad-Math.random()*6},
-        {x: pad+Math.random()*6, y: 100-pad-Math.random()*6}
+        {x: padX+Math.random()*6, y: padY+32+Math.random()*3},
+        {x: 100-padX-Math.random()*6, y: padY+28+Math.random()*3},
+        {x: 100-padX-Math.random()*6, y: 100-padY-Math.random()*4},
+        {x: padX+Math.random()*6, y: 100-padY-Math.random()*4}
       ];
-      // SVG path for rounded quad
       function roundedPath(pts, r) {
         return `
           M${pts[0].x},${pts[0].y+r}
@@ -112,8 +119,7 @@
       const path = document.createElementNS("http://www.w3.org/2000/svg","path");
       path.setAttribute('d', roundedPath(pts, r));
       path.setAttribute('fill', quadFill);
-      path.setAttribute('stroke', quadStroke);
-      path.setAttribute('stroke-width', 4);
+      path.setAttribute('stroke', "none");
       svg.appendChild(path);
 
       cell.appendChild(svg);
